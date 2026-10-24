@@ -224,7 +224,12 @@ function codigoGuardado() {
 function mostrarConvite(codigo) {
   try { localStorage.setItem("gogo-sala", codigo); } catch { /* aba anônima: sorteia de novo na próxima */ }
   const linkDoCelular = new URL(`cel.html?sala=${codigo}`, location.href).href;
-  $("enderecoRede").textContent = `Endereço do palco: ${new URL("palco.html", location.href).href} · celular e computador precisam estar no mesmo Wi-Fi.`;
+  const host = location.hostname.toLowerCase();
+  const redeLocal = enderecoSoDesteAparelho(host) || /^(10\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.)/.test(host);
+  const dicaDeConexao = redeLocal
+    ? "celular e computador precisam estar no mesmo Wi-Fi."
+    : "compartilhe este link com quem vai cantar.";
+  $("enderecoRede").textContent = `Endereço do palco: ${new URL("palco.html", location.href).href} · ${dicaDeConexao}`;
   $("codigo").textContent = codigo;
   if (enderecoSoDesteAparelho(location.hostname)) {
     // Sem QR code: ele mandaria o celular pra "localhost", que é o próprio celular.
