@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0F0F14">
+<title>gogó — palco</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Unbounded:wght@700;800&display=swap">
+<style>
+  :root { --fundo: #0F0F14; --vidro: rgba(16,16,24,0.58); --borda: rgba(255,255,255,0.09);
+          --texto: #F2F2F0; --apagado: #A3A3AD; --marca: #F2C14E; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--fundo); color: var(--texto); font: 18px/1.4 Outfit, system-ui, sans-serif; overflow: hidden; }
+  body.tremendo { transform: translate3d(var(--tremor-x, 0px), var(--tremor-y, 0px), 0); }
+  button { cursor: pointer; }
+  /* O fundo colorido (e a pauta das vozes) fica atrás de tudo, na tela toda. */
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
+
+  /* --- A sala: a marca em cima, o convite à esquerda, a fila à direita e, no
+     meio, a linha da voz de quem está cantando, por cima do fundo. --- */
+  .sala { position: relative; z-index: 1; height: 100%; display: grid; padding: 28px 32px 32px;
+          grid-template-columns: minmax(260px, 330px) minmax(0, 1fr) minmax(300px, 400px);
+          grid-template-rows: auto minmax(0, 1fr); gap: 24px 28px; }
+  body.cantando .sala { display: none; }
+  .topo { grid-column: 1 / -1; display: flex; align-items: center; min-height: 56px; }
+  /* line-height e padding folgados: o texto em degradê só pinta dentro da
+     caixa, e com a caixa justa o "g" e o acento do "ó" saíam cortados. */
+  .marca { font: 800 56px/1.35 Unbounded, Outfit, sans-serif; letter-spacing: -1px; padding: 0 0.08em;
+           background: linear-gradient(100deg, #F2C14E 10%, #F2789B 55%, #9B8CF2 90%);
+           -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .cartao { background: var(--vidro); border: 1px solid var(--borda); border-radius: 28px;
+            -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+            padding: 24px; display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow-y: auto; }
+  .convite { align-self: start; align-items: center; text-align: center; }
+  .qr { width: 100%; max-width: 250px; aspect-ratio: 1; background: #fff; border-radius: 20px; padding: 10px; }
+  .qr svg { width: 100%; height: 100%; display: block; }
+  .rotulo { margin: 0; color: var(--apagado); font-size: 13px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; }
+  .codigo { margin: 4px 0 0; font: 700 32px/1.1 Unbounded, Outfit, sans-serif; letter-spacing: 6px; }
+  .endereco { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
+  .erro { color: #F2A07B; }
+  .lado { gap: 10px; }
+  .lado .rotulo:not(:first-child) { margin-top: 14px; }
+  #cantores { display: flex; flex-direction: column; gap: 8px; }
+  .cantor { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; align-items: center; gap: 0 12px;
+            padding: 10px 16px; border-radius: 16px; background: rgba(255,255,255,0.05); }
+  .cantor::before { content: ""; grid-column: 1; grid-row: 1 / span 2; width: 12px; height: 12px; border-radius: 50%;
+                    background: var(--cor); box-shadow: 0 0 12px var(--cor); }
+  .cantor .nome { grid-column: 2; grid-row: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cantor .info { grid-column: 2; grid-row: 2; color: var(--apagado); font-size: 13px; }
+  .cantor .nota { grid-column: 3; grid-row: 1 / span 2; font-size: 28px; font-weight: 800; color: var(--cor); }
+  .vazio, .info-sala { margin: 0; color: var(--apagado); font-size: 15px; }
+  #enderecoRede { overflow-wrap: anywhere; text-align: center; }
+  .fila { max-height: 260px; overflow-y: auto; margin: 0; padding: 0 4px 0 0; list-style: none; counter-reset: fila; display: flex; flex-direction: column; }
+  .fila li { counter-increment: fila; display: flex; align-items: center; gap: 10px; padding: 9px 0; font-size: 16px;
+             border-bottom: 1px solid var(--borda); }
+  .texto-fila { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .tirar-fila-palco { min-height: 44px; padding: 0 12px; border: 1px solid #7A4545; border-radius: 12px;
+                      background: #301D22; color: #FFE2DF; font: 600 14px Outfit, system-ui, sans-serif; }
+  .fila li::before { content: counter(fila); color: var(--marca); font-weight: 800; min-width: 14px; }
+  .fila li:last-child { border-bottom: 0; }
+  .acoes { margin-top: auto; padding-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .botao { min-height: 56px; padding: 0 24px; border: 0; border-radius: 16px; color: #0F0F14;
+           background: linear-gradient(100deg, #F2C14E, #F5A25D); font: 700 19px Outfit, system-ui, sans-serif; }
+  .secundario { min-height: 52px; padding: 0 22px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.18);
+                background: rgba(255,255,255,0.06); color: var(--texto); font: 600 17px Outfit, system-ui, sans-serif; }
+
+  /* --- O volume e o "Parar": só com a música tocando, no canto de cima à
+     direita, meio transparentes. Somem depois de uns segundos sem mexer na
+     tela e voltam no toque. --- */
+  .controles-topo { position: fixed; top: 12px; right: 16px; z-index: 4; display: flex; gap: 10px; align-items: center;
+                    opacity: 0.45; transition: opacity 0.4s; }
+  body:not(.cantando) .controles-topo { display: none; }
+  .controles-topo:hover { opacity: 1; }
+  body.quieto .controles-topo:not(:hover) { opacity: 0; pointer-events: none; }
+  .controle-volume, .parar { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 16px;
+                             border-radius: 999px; background: var(--vidro); border: 1px solid var(--borda);
+                             -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+                             color: var(--texto); font: 600 15px Outfit, system-ui, sans-serif; }
+  .controle-volume svg { width: 20px; height: 20px; flex: none; }
+  .controle-volume input { width: 110px; accent-color: var(--marca); }
+  .controle-faixa { display: flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 12px; border-radius: 999px;
+                    background: var(--vidro); border: 1px solid var(--borda); color: var(--texto); font-size: 13px; }
+  .controle-faixa input { width: 76px; accent-color: var(--marca); }
+
+  /* --- Os painéis por cima (resultado e escolher música): vidro escuro, com
+     o fundo colorido ainda aparecendo. --- */
+  .painel { position: fixed; inset: 0; z-index: 3; background: rgba(12,12,18,0.8);
+            -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); padding: 40px 48px;
+            display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+  .titulo-res { margin: 0; font: 800 44px/1.1 Unbounded, Outfit, sans-serif; color: var(--marca); }
+  .res-cantores { display: flex; flex-wrap: wrap; gap: 40px; }
+  .res-cantor { display: flex; flex-direction: column; gap: 6px; min-width: 240px; }
+  .res-nome { font-size: 26px; font-weight: 600; color: var(--cor); }
+  .res-pontos { font-size: 80px; font-weight: 800; line-height: 1; }
+  .res-titulo { font: 700 22px/1.25 Unbounded, Outfit, sans-serif; }
+  .res-info { color: #C9C9CF; white-space: pre-line; margin-top: 6px; }
+  .proxima { margin: 0; font-size: 22px; }
+  .botoes { display: flex; gap: 14px; margin-top: auto; flex-wrap: wrap; }
+  .cab { display: flex; align-items: center; gap: 16px; }
+  .cab h2 { margin: 0; font: 800 32px Unbounded, Outfit, sans-serif; }
+  .cab .secundario { margin-left: auto; }
+  .dificuldades { display: flex; gap: 6px; max-width: 420px; }
+  .dificuldades button { flex: 1; min-height: 44px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.18);
+                         background: transparent; color: var(--texto); font: 600 15px Outfit, system-ui, sans-serif; }
+  .dificuldades button[aria-pressed="true"] { background: var(--texto); color: var(--fundo); border-color: var(--texto); }
+  .config { display: flex; flex-wrap: wrap; gap: 28px; }
+  .bloco-config { flex: 1 1 280px; max-width: 480px; display: flex; flex-direction: column; gap: 10px; }
+  .nivel { height: 10px; border-radius: 5px; background: rgba(255,255,255,0.08); overflow: hidden; }
+  #nivelMicrofone { height: 100%; width: 0; background: #4A90E2; transition: width 60ms linear; }
+  .youtube { position: fixed; left: 0; right: 0; top: 0; bottom: 26%; z-index: 1; background: #000; }
+  .youtube iframe, .youtube > div { width: 100%; height: 100%; border: 0; display: block; }
+  body.livre canvas { top: 74%; height: 26%; }
+  .busca { max-width: 480px; min-height: 48px; padding: 0 14px; font: 18px Outfit, system-ui, sans-serif;
+           color: var(--texto); background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); border-radius: 12px; }
+  select.busca option { background: #181820; }
+  .lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--borda); flex-wrap: wrap; }
+  .item-texto { flex: 1 1 260px; min-width: 0; }
+  .item-detalhe { color: var(--apagado); font-size: 15px; }
+
+  .aviso { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 6;
+           width: max-content; max-width: min(560px, calc(100% - 32px)); padding: 14px 22px; border-radius: 16px;
+           background: rgba(24,24,34,0.94); border: 1px solid rgba(255,255,255,0.16);
+           -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+           font-size: 17px; text-align: center; animation: aparecer 0.25s ease-out; }
+  @keyframes aparecer { from { opacity: 0; transform: translate(-50%, 12px); } }
+
+  /* Celular deitado, espelhado na TV: convite e fila lado a lado; a pauta das
+     vozes sai da sala, que não tem espaço. */
+  @media (max-height: 520px) {
+    body { font-size: 16px; }
+    .sala { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); padding: 12px 16px 14px; gap: 10px 14px; }
+    .meio { display: none; }
+    .topo { min-height: 44px; }
+    .marca { font-size: 32px; }
+    .cartao { padding: 14px; border-radius: 22px; }
+    .convite { flex-direction: row; flex-wrap: wrap; justify-content: center; align-self: stretch; gap: 6px 18px; }
+    .qr { width: min(170px, 42vh); padding: 6px; border-radius: 14px; }
+    .codigo { font-size: 22px; letter-spacing: 4px; }
+    .lado { gap: 6px; }
+    .lado .rotulo:not(:first-child) { margin-top: 8px; }
+    .cantor { padding: 6px 12px; }
+    .cantor .nota { font-size: 22px; }
+    .fila li { padding: 5px 0; font-size: 15px; }
+    .acoes { flex-direction: row; padding-top: 8px; }
+    .acoes button { flex: 1; }
+    .painel { padding: 18px 24px; gap: 12px; }
+    .titulo-res { font-size: 28px; }
+    .res-pontos { font-size: 48px; }
+    .res-nome { font-size: 20px; }
+    .res-titulo { font-size: 16px; }
+    .botao, .secundario { min-height: 46px; font-size: 16px; }
+  }
+  /* Celular em pé: tudo numa coluna só, rolando. */
+  @media (max-width: 760px) and (min-height: 521px) {
+    body { overflow: auto; }
+    .sala { height: auto; min-height: 100%; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; padding: 16px; }
+    .meio { display: none; }
+    .marca { font-size: 40px; }
+    .controle-volume input { width: 80px; }
+    .convite { align-self: stretch; }
+  }
+  @media (max-width: 760px) {
+    .controles-topo { top: 8px; right: 8px; left: 8px; justify-content: flex-end; gap: 5px; flex-wrap: wrap; }
+    .controle-volume { min-height: 38px; padding: 0 9px; gap: 5px; }
+    .controle-volume input { width: 68px; }
+    .controle-faixa { min-height: 38px; padding: 0 8px; gap: 4px; font-size: 11px; }
+    .controle-faixa input { width: 55px; }
+    .parar { min-height: 38px; padding: 0 10px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="pauta"></canvas>
+<div id="youtube" class="youtube" hidden><div id="videoYoutube"></div></div>
+<div class="sala">
+  <header class="topo"><div class="marca">gogó</div></header>
+  <section class="cartao convite" aria-label="Entrar na sala">
+    <div id="qr" class="qr" hidden></div>
+    <div>
+      <p class="rotulo">Código da sala</p>
+      <p id="codigo" class="codigo">…</p>
+    </div>
+    <p id="endereco" class="endereco" hidden></p>
+    <p id="enderecoRede" class="info-sala"></p>
+  </section>
+  <div id="meio" class="meio"></div>
+  <section class="cartao lado" aria-label="Sala e fila">
+    <p class="rotulo">Na sala</p>
+    <div id="cantores"><p class="vazio">Ninguém entrou ainda.</p></div>
+    <p class="rotulo">A seguir</p>
+    <ol id="fila" class="fila"></ol>
+    <p id="filaVazia" class="info-sala">Escolham a música pelo celular.</p>
+    <div class="acoes">
+      <button id="ativarSom" class="secundario">Ativar som do palco</button>
+      <button id="verBiblioteca" class="secundario">Escolher música</button>
+      <button id="comecar" class="botao">Começar a próxima</button>
+    </div>
+  </section>
+</div>
+<p id="aviso" class="aviso" role="status" hidden></p>
+<div class="controles-topo">
+  <label id="controleFaixaMusica" class="controle-faixa" hidden>Música <input id="volumeFaixaMusica" type="range" min="0" max="100" step="5" value="100" aria-label="Volume da música"></label>
+  <label id="controleFaixaVoz" class="controle-faixa" hidden>Voz gravada <input id="volumeFaixaVoz" type="range" min="0" max="100" step="5" value="0" aria-label="Volume da voz gravada"></label>
+  <label class="controle-volume" title="Volume">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+    <input id="volume" type="range" min="0" max="100" step="5" aria-label="Volume">
+  </label>
+  <button id="parar" class="parar" hidden>Parar a música</button>
+</div>
+  <section id="resultado" class="painel" hidden aria-live="polite">
+    <p id="resMusica" class="rotulo"></p>
+    <h2 id="resTitulo" class="titulo-res"></h2>
+    <div id="resCantores" class="res-cantores"></div>
+    <p id="proxima" class="proxima"></p>
+    <div class="botoes">
+      <button id="comecarProxima" class="botao">Começar a próxima</button>
+      <button id="ouvirFinal" class="secundario">Tocar música da pontuação</button>
+      <button id="esperar" class="secundario">Esperar</button>
+      <button id="voltar" class="secundario">Voltar pra sala</button>
+    </div>
+  </section>
+  <section id="painelBiblioteca" class="painel" hidden aria-label="Músicas e microfone">
+    <div class="cab">
+      <h2>Escolher música</h2>
+      <button id="fecharBiblioteca" class="secundario">Fechar</button>
+    </div>
+    <div class="config">
+      <div class="bloco-config">
+        <p class="rotulo">Qualquer música, pelo YouTube (sem pontuação)</p>
+        <input id="termoYoutubePalco" class="busca" type="search" autocomplete="off" placeholder="Nome da música"
+               aria-label="Nome da música pra procurar no YouTube">
+        <button id="procurarYoutubePalco" class="secundario">Procurar no YouTube</button>
+        <input id="linkYoutubePalco" class="busca" type="url" autocomplete="off" placeholder="Cole aqui o link do vídeo"
+               aria-label="Link do vídeo do YouTube">
+        <button id="porYoutubeNaFila" class="botao">Pôr na fila</button>
+        <p id="avisoYoutube" class="info-sala" aria-live="polite"></p>
+      </div>
+      <div class="bloco-config">
+        <p class="rotulo">Repertório</p>
+        <p id="contagemMusicas" class="info-sala"></p>
+        <button id="adicionarPasta" class="secundario">Adicionar uma pasta</button>
+        <button id="adicionar" class="secundario">Adicionar arquivos</button>
+        <input id="pasta" type="file" webkitdirectory multiple hidden>
+        <input id="arquivos" type="file" multiple accept=".txt,audio/*" hidden>
+        <p id="avisoMusica" class="info-sala" aria-live="polite"></p>
+      </div>
+      <div class="bloco-config">
+        <p class="rotulo">Microfone deste aparelho</p>
+        <label for="nomeMicrofone" class="info-sala">Quem canta nele</label>
+        <input id="nomeMicrofone" class="busca" autocomplete="off" placeholder="Seu nome">
+        <select id="qualMicrofone" class="busca" aria-label="Qual microfone" hidden></select>
+        <button id="usarMicrofone" class="secundario">Ligar o microfone</button>
+        <label class="info-sala">Volume da minha voz <input id="volumeMonitor" type="range" min="0" max="70" step="5" value="35"></label>
+        <p class="info-sala">Use fones para evitar eco e microfonia.</p>
+        <div class="nivel" aria-hidden="true"><div id="nivelMicrofone"></div></div>
+        <p id="avisoMicrofone" class="info-sala" aria-live="polite"></p>
+      </div>
+    </div>
+    <p class="info-sala">Daqui, a música entra na fila pra quem está na sala, nesta dificuldade:</p>
+    <div class="dificuldades" role="group" aria-label="Dificuldade">
+      <button data-dificuldade="facil" aria-pressed="false">Fácil</button>
+      <button data-dificuldade="medio" aria-pressed="true">Médio</button>
+      <button data-dificuldade="dificil" aria-pressed="false">Difícil</button>
+    </div>
+    <label for="participantesPalco" class="rotulo">Ao pôr música na fila pelo computador</label>
+    <select id="participantesPalco" class="busca" aria-label="Quem canta quando a música entra pelo computador">
+      <option value="1">Só a primeira pessoa (solo)</option>
+      <option value="2">As duas primeiras pessoas (dueto)</option>
+    </select>
+    <label for="buscaBiblioteca" class="rotulo">Buscar música ou artista</label>
+    <input id="buscaBiblioteca" type="search" autocomplete="off" placeholder="Chappell Roan" class="busca">
+    <ul id="listaBiblioteca" class="lista"></ul>
+  </section>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script type="module" src="js/palco.js"></script>
+</body>
+</html>
