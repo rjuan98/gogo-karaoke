@@ -107,17 +107,21 @@ no PC não acompanha essa versão estática; para usar esse repertório, mantenh
 servidor do PC ligado e compartilhe o endereço HTTPS do túnel.
 
 Para servir também o catálogo que está no seu PC, rode o servidor local e
-coloque um túnel HTTPS apontando para ele. Um exemplo para testar com Cloudflare
-Quick Tunnel:
+coloque um túnel HTTPS apontando para ele. Se as pastas `karaoke` e `ultrasinger`
+estiverem lado a lado em `Downloads`, o atalho encontra automaticamente
+`ultrasinger/musicas` e o Python instalado junto com o UltraSinger. Um exemplo
+para testar com Cloudflare Quick Tunnel:
 
 ```
-iniciar_servidor.bat --musicas "D:/Karaoke/musicas"
+iniciar_servidor.bat
 cloudflared tunnel --url http://localhost:5443
 ```
 
-Se as músicas estiverem na pasta padrão `musicas/`, basta abrir
-`iniciar_servidor.bat` sem argumentos. Essa janela e a do túnel precisam ficar
-abertas enquanto o catálogo estiver em uso.
+Se a biblioteca estiver em outra pasta, informe o caminho ao atalho, por
+exemplo `iniciar_servidor.bat --musicas "D:/Karaoke/musicas"`. Sem uma pasta do
+UltraSinger ao lado, ele usa `musicas/` dentro do projeto. Essa janela e a do
+túnel precisam ficar abertas enquanto o catálogo estiver em uso. Atrás do túnel
+não precisa instalar `cryptography`; ela só é necessária para o HTTPS local.
 
 Abra o endereço HTTPS que o túnel mostrar e acrescente `/palco.html`. O Quick
 Tunnel troca de endereço quando é iniciado de novo; para uma festa, configure

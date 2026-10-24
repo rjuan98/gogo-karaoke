@@ -20,8 +20,6 @@ import ssl
 from pathlib import Path
 from urllib.parse import parse_qs, quote, urlsplit
 
-import certificado
-
 PORTA = 5443
 PASTA = Path(__file__).parent / "site"
 PASTA_MUSICAS = Path(__file__).parent / "musicas"
@@ -209,6 +207,8 @@ def main() -> None:
         servidor = http.server.ThreadingHTTPServer(("127.0.0.1", PORTA), Entrega)
         print(f"\ngogó no ar, só neste notebook:  http://localhost:{PORTA}/\n")
     else:
+        import certificado  # A biblioteca só é necessária para o HTTPS local.
+
         ips = ips_da_rede()
         cert, chave = certificado.garantir(ips + ["127.0.0.1"])
         contexto = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
