@@ -78,6 +78,12 @@ Ele separa o instrumental e a voz e acerta o tempo da letra com o áudio.
 Qualquer hospedagem de site estático serve, porque é só subir a pasta `site/`.
 Ela já vem com https, e aí some o aviso de certificado no celular.
 
+O app também está disponível no [GitHub Pages](https://rjuan98.github.io/gogo-karaoke/).
+Para testar com a música de demonstração, abra o [palco](https://rjuan98.github.io/gogo-karaoke/palco.html)
+no computador e leia o QR code com o celular. A biblioteca de músicas que fica
+no PC não acompanha essa versão estática; para usar esse repertório, mantenha o
+servidor do PC ligado e compartilhe o endereço HTTPS do túnel.
+
 Para servir também o catálogo que está no seu PC, rode o servidor local e
 coloque um túnel HTTPS apontando para ele. Um exemplo para testar com Cloudflare
 Quick Tunnel:
