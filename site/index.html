@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0F0F14">
+<title>gogó</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Unbounded:wght@700;800&display=swap">
+<style>
+  :root { --fundo: #0F0F14; --texto: #F2F2F0; --apagado: #9A9AA3; --marca: #F2C14E; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: var(--fundo); color: var(--texto);
+         font: 17px/1.5 Outfit, system-ui, sans-serif; display: flex; justify-content: center; }
+  main { width: 100%; max-width: 440px; padding: 56px 20px 32px; display: flex; flex-direction: column; gap: 16px; }
+  .marca { font: 800 56px/1 Unbounded, Outfit, sans-serif; color: var(--marca); }
+  .lema { margin: 0 0 24px; color: #C9C9CF; font-size: 19px; }
+  .botao { display: flex; align-items: center; justify-content: center; min-height: 60px; border-radius: 14px;
+           background: var(--marca); color: #0F0F14; font-size: 19px; font-weight: 600; text-decoration: none; }
+  .dica { margin: 0 0 24px; color: var(--apagado); font-size: 15px; }
+  label { color: #C9C9CF; font-size: 15px; }
+  .linha { display: flex; gap: 10px; margin-top: 6px; }
+  input { flex: 1; min-width: 0; height: 56px; padding: 0 14px; font: inherit; font-size: 20px; letter-spacing: 2px;
+          text-transform: uppercase; color: var(--texto); background: #181820; border: 1px solid #3A3A46; border-radius: 12px; }
+  button { height: 56px; padding: 0 22px; font: inherit; font-weight: 600; color: var(--texto); background: transparent;
+           border: 2px solid #3A3A46; border-radius: 12px; }
+  .erro { color: #F2A07B; min-height: 1.5em; margin: 0; }
+</style>
+</head>
+<body>
+<main>
+  <div class="marca">gogó</div>
+  <p class="lema">Karaokê com o celular de microfone.</p>
+  <a class="botao" href="palco.html">Abrir o palco nesta tela</a>
+  <p class="dica">Na TV, no notebook ou num tablet. Depois os outros entram pelo QR code.</p>
+  <form id="entrar">
+    <label for="codigo">Ou entre numa sala que já está aberta</label>
+    <div class="linha">
+      <input id="codigo" maxlength="5" autocomplete="off" autocapitalize="characters" placeholder="LUMEN">
+      <button>Entrar</button>
+    </div>
+    <p id="erro" class="erro"></p>
+  </form>
+</main>
+<script type="module">
+  import { limparCodigo } from "./js/protocolo.js";
+  document.getElementById("entrar").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const codigo = limparCodigo(document.getElementById("codigo").value);
+    if (codigo.length !== 5) {
+      document.getElementById("erro").textContent = "O código tem 5 letras, do jeito que aparece na TV.";
+      return;
+    }
+    location.href = `cel.html?sala=${codigo}`;
+  });
+</script>
+</body>
+</html>
