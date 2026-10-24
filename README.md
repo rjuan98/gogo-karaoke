@@ -73,6 +73,28 @@ Ele separa o instrumental e a voz e acerta o tempo da letra com o áudio.
   deitado), o palco se arruma em três colunas.
 - Se o palco recarregar, ele reabre a mesma sala e os celulares voltam sozinhos.
 
+### Duas festas, um catálogo
+
+O mesmo servidor pode atender duas festas ao mesmo tempo. Ele só entrega as
+páginas e os arquivos das músicas; cada aparelho que abrir `palco.html` cria
+sua própria sala, com código e fila separados. Assim, você e seu amigo usam o
+mesmo endereço e repertório, mas cada festa tem seu QR code e sua fila. Não
+precisa copiar as músicas para o GitHub nem para os celulares.
+
+Para isso, deixe este PC ligado com `servir.py` e o túnel ativos. Configure um
+túnel Cloudflare com um nome fixo, por exemplo `gogo.seudominio.com`, apontando
+para `http://localhost:5443`. Nas duas festas, o anfitrião abre
+`https://gogo.seudominio.com/palco.html` no computador ligado à TV. Cada palco
+mostra o próprio código para os celulares daquela festa. O palco carrega as
+músicas do seu PC quando são escolhidas; por isso, as duas festas dependem da
+internet e de o PC servidor continuar ligado.
+
+O endereço do GitHub Pages continua sendo útil para conhecer/testar a versão
+de demonstração, mas não contém o catálogo do PC. Um Quick Tunnel serve para
+testar; como o endereço muda quando ele reinicia, use um túnel nomeado para as
+festas. O domínio fixo é configurado uma vez na conta Cloudflare e pode ser
+reutilizado nas duas datas.
+
 ## Publicar na internet
 
 Qualquer hospedagem de site estático serve, porque é só subir a pasta `site/`.
@@ -89,9 +111,13 @@ coloque um túnel HTTPS apontando para ele. Um exemplo para testar com Cloudflar
 Quick Tunnel:
 
 ```
-python servir.py --sem-https --musicas "D:/Karaoke/musicas"
+iniciar_servidor.bat --musicas "D:/Karaoke/musicas"
 cloudflared tunnel --url http://localhost:5443
 ```
+
+Se as músicas estiverem na pasta padrão `musicas/`, basta abrir
+`iniciar_servidor.bat` sem argumentos. Essa janela e a do túnel precisam ficar
+abertas enquanto o catálogo estiver em uso.
 
 Abra o endereço HTTPS que o túnel mostrar e acrescente `/palco.html`. O Quick
 Tunnel troca de endereço quando é iniciado de novo; para uma festa, configure
